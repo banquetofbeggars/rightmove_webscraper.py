@@ -16,7 +16,7 @@ class RightmoveData:
 
     The query to rightmove can be renewed by calling the `refresh_data` method.
     """
-    def __init__(self, url: str, get_floorplans: bool = False):
+    def __init__(self, url: str, get_floorplans: bool = False, headers=None):
         """Initialize the scraper with a URL from the results of a property
         search performed on www.rightmove.co.uk.
 
@@ -25,16 +25,26 @@ class RightmoveData:
             get_floorplans (bool): optionally scrape links to the individual
                 floor plan images for each listing (be warned this drastically
                 increases runtime so is False by default).
+            headers (dict|None): optional headers to pass to the web request.
         """
-        self._status_code, self._first_page = self._request(url)
+        self._headers = self._get_headers(headers)
+        self._status_code, self._first_page = self._request(url, self._headers)
         self._url = url
         self._validate_url()
         self._results = self._get_results(get_floorplans=get_floorplans)
 
     @staticmethod
-    def _request(url: str):
-        r = requests.get(url)
+    def _request(url: str, headers: dict):
+        r = requests.get(url, headers=headers)
         return r.status_code, r.content
+
+    @staticmethod
+    def _get_headers(headers):
+        if headers is None:
+            return {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.0; WOW64; rv:24.0) Gecko/20100101 Firefox/24.0'
+            }
+        return headers
 
     def refresh_data(self, url: str = None, get_floorplans: bool = False):
         """Make a fresh GET request for the rightmove data.
